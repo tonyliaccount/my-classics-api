@@ -3,8 +3,12 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
+const booksRoutes = require('./routes/books');
+
 // Middleware for allowing Cross-Origin
 app.use(cors());
+
+app.use('/books', booksRoutes);
 
 // Middleware for serving static files
 app.use(express.static('public'));
