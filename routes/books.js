@@ -6,7 +6,7 @@ const axios = require('axios').default;
 const storage = require("../utils/storage-wrapper.js"); 
 const utils = require("./../utils/utils.js");
 
-//get single inventory info
+//get list of books without any specific queries
 router.get('/', async (req, res) => {
 
     /* 
@@ -16,11 +16,27 @@ router.get('/', async (req, res) => {
     res.status(200);
     res.send(gutendexResponse.data); */
 
+    // These are just the temp data.
     res.status(200);
-    res.send(storage.getBooks());
+    res.send(storage.getBooks().results);
 });
 
-//get single inventory info
+//get list of books based on specific queries
+router.get('/search/:query', async (req, res) => {
+    const gutendexResponse = await axios.get(`https://gutendex.com/books?search=${req.params.query}`);
+
+    // Santize it first - no point in returning a book if it doesn't have an ebook associated with it
+
+    const santizedResponse = gutendexResponse.data.results.filter( (book) => {
+        return 'application/epub+zip' in book.formats;
+    });
+
+    res.status(200);
+    console.log(santizedResponse);
+    res.send(santizedResponse);
+});
+
+//get information regarding a particular book, and make its epub file avaliable
 router.get('/:id', async (req, res) => {
     
     try {
