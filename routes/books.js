@@ -6,33 +6,28 @@ const axios = require('axios').default;
 const storage = require("../utils/storage-wrapper.js"); 
 const utils = require("./../utils/utils.js");
 
-//get list of books without any specific queries
+//get list of books based on specific queries
 router.get('/', async (req, res) => {
 
-    /* 
-    // These are the real calls - need some sort of caching mechanism
-    
-    const gutendexResponse = await axios.get("https://gutendex.com/books/");
-    res.status(200);
-    res.send(gutendexResponse.data); */
+    const queryString = req.query ? new URLSearchParams(req.query).toString() : '';
 
-    // These are just the temp data.
-    res.status(200);
-    res.send(storage.getBooks().results);
-});
-
-//get list of books based on specific queries
-router.get('/search/:query', async (req, res) => {
-    const gutendexResponse = await axios.get(`https://gutendex.com/books?search=${req.params.query}`);
+    const gutendexResponse = await axios.get(`https://gutendex.com/books?${queryString}`);
 
     // Santize it first - no point in returning a book if it doesn't have an ebook associated with it
 
-    const santizedResponse = gutendexResponse.data.results.filter( (book) => {
+    const santizedResponse = gutendexResponse.data;
+
+    santizedResponse.next = santizedResponse.next !== null ? santizedResponse.next.substring(santizedResponse.next.indexOf('books') + 6) : null;
+    santizedResponse.previous = santizedResponse.previous !== null ? santizedResponse.previous.substring(santizedResponse.previous.indexOf('books') + 6): null;
+    
+    const prevParams = new URLSearchParams(santizedResponse.previous);
+    santizedResponse.page = prevParams.get('page') ? parseInt(prevParams.get('page')) + 1 : 1;
+    
+    santizedResponse.results = santizedResponse.results.filter( (book) => {
         return 'application/epub+zip' in book.formats;
     });
 
     res.status(200);
-    console.log(santizedResponse);
     res.send(santizedResponse);
 });
 
